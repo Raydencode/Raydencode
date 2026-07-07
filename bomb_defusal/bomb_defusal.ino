@@ -47,7 +47,7 @@ void setup() {
   for (uint8_t i = 0; i < 3; i++) pinMode(WIRE_PIN[i], INPUT_PULLUP);
   for (uint8_t i = 0; i < 4; i++) {
     pinMode(SIMON_LED_PIN[i], OUTPUT);
-    pinMode(SIMON_BTN_PIN[i], INPUT_PULLUP);
+    pinMode(SIMON_BTN_PIN[i], INPUT); // button modules have their own pull-down, signal idles LOW
     digitalWrite(SIMON_LED_PIN[i], LOW);
   }
 
@@ -174,9 +174,9 @@ void handleLevel2Show() {
 
 void handleLevel2Input() {
   for (uint8_t i = 0; i < 4; i++) {
-    if (digitalRead(SIMON_BTN_PIN[i]) == LOW) {
+    if (digitalRead(SIMON_BTN_PIN[i]) == HIGH) { // module drives its signal pin HIGH when pressed
       delay(30); // debounce
-      if (digitalRead(SIMON_BTN_PIN[i]) != LOW) continue;
+      if (digitalRead(SIMON_BTN_PIN[i]) != HIGH) continue;
 
       flashLed(i, 200);
 
@@ -194,7 +194,7 @@ void handleLevel2Input() {
         state = LEVEL2_SHOW;
       }
 
-      while (digitalRead(SIMON_BTN_PIN[i]) == LOW) delay(5); // wait for release
+      while (digitalRead(SIMON_BTN_PIN[i]) == HIGH) delay(5); // wait for release
     }
   }
 }
