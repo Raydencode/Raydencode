@@ -123,11 +123,35 @@ function showTranscript(text) {
   }
 }
 
-// Wire up card close buttons.
+// Mute button: toggles local UI state immediately, then tells Python via
+// pywebview's js_api bridge (main.py's UltronApp.set_mute) so the recording
+// loop actually stops touching the microphone while muted.
+let isMuted = false;
+
+function _updateMuteButton() {
+  const btn = document.getElementById('mute-toggle');
+  if (!btn) return;
+  btn.textContent = isMuted ? '🔇 MUTED' : '🎤 MUTE';
+  btn.classList.toggle('muted', isMuted);
+}
+
+function _toggleMute() {
+  isMuted = !isMuted;
+  _updateMuteButton();
+  if (window.pywebview && window.pywebview.api && window.pywebview.api.set_mute) {
+    window.pywebview.api.set_mute(isMuted);
+  }
+}
+
+// Wire up card close buttons and the mute button.
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.card-close').forEach(btn => {
     btn.addEventListener('click', () => hideCard(btn.dataset.card));
   });
+
+  const muteBtn = document.getElementById('mute-toggle');
+  if (muteBtn) muteBtn.addEventListener('click', _toggleMute);
+  _updateMuteButton();
 });
 
 // Expose to Python (pywebview's evaluate_js just calls these as globals, but

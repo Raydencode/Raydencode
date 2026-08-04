@@ -139,6 +139,10 @@ html, body {
   transform: translateX(-50%);
   text-align: center;
   z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
 }
 
 #status-text {
@@ -171,9 +175,37 @@ html, body {
   animation: status-blink 0.4s ease-in-out infinite;
 }
 
+#status-text.muted {
+  color: #555;
+}
+
 @keyframes status-blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
+}
+
+#mute-toggle {
+  font-family: 'Orbitron', 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.15rem;
+  font-weight: 600;
+  color: #ccc;
+  background: rgba(255, 59, 59, 0.08);
+  border: 1px solid var(--panel-border);
+  border-radius: 20px;
+  padding: 6px 16px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+#mute-toggle:hover {
+  background: rgba(255, 59, 59, 0.18);
+}
+
+#mute-toggle.muted {
+  color: #ff8a8a;
+  background: rgba(255, 59, 59, 0.3);
+  border-color: var(--red);
 }
 
 /* --------------------------------------------------------- TRANSCRIPT -- */

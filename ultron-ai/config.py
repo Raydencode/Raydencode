@@ -97,10 +97,6 @@ DASHBOARD_HEIGHT = int(os.getenv("DASHBOARD_HEIGHT", "900"))
 DASHBOARD_ALWAYS_ON_TOP = os.getenv("DASHBOARD_ALWAYS_ON_TOP", "false").lower() == "true"
 DASHBOARD_FRAMELESS = os.getenv("DASHBOARD_FRAMELESS", "false").lower() == "true"
 
-# Push-to-talk key, as understood by the `keyboard` library (e.g. "space",
-# "right ctrl", "f9").
-WAKE_KEY = os.getenv("WAKE_KEY", "space")
-
 # Conversation history trimming (see brain.py).
 MAX_HISTORY_TURNS = int(os.getenv("MAX_HISTORY_TURNS", "20"))
 
@@ -120,4 +116,3 @@ if __name__ == "__main__":
         print(f"  OLLAMA_MODEL = {OLLAMA_MODEL}")
         print(f"  OLLAMA_HOST = {OLLAMA_HOST}")
     print(f"  WHISPER_MODEL_SIZE = {WHISPER_MODEL_SIZE}")
-    print(f"  WAKE_KEY = {WAKE_KEY}")

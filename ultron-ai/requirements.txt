@@ -26,12 +26,12 @@ piper-tts>=1.2.0
 pyautogui>=0.9.54
 psutil>=5.9.8
 
-# Push-to-talk
-# NOTE: on Linux, `keyboard` needs root (or a user added to the `input`
-# group with the right udev rules) because it reads raw /dev/input events.
-# main.py falls back to console (Enter-key) push-to-talk if this fails to
-# initialize.
-keyboard>=0.13.5
+# NOTE: this project does NOT use the `keyboard` package for push-to-talk.
+# Listening is always-on (see main.py) — `keyboard` installs a global
+# keyboard hook to detect key state system-wide, which is the same
+# technique real keyloggers use, and some antivirus/endpoint security
+# software will flag and block it. Always-on listening + a dashboard mute
+# button avoids that entirely.
 
 # ----------------------------------------------------------------------------
 # OS-level dependencies (not installable via pip — see README):
