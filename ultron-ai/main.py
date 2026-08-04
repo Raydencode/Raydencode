@@ -29,13 +29,24 @@ Whisper and checked for the wake word, which is heavier than a purpose-built
 wake-word model but avoids adding one. If the wake word is heard with little
 or nothing useful after it (e.g. just "hey Ultron"), one extra chunk is
 recorded immediately to capture the actual request.
+
+The wake-word check is fuzzy, not an exact match: a quiet mic + an uncommon
+proper noun means Whisper regularly mishears "Ultron" as something close
+but not identical ("Oltron", "Ultrone", ...). Each transcribed word (and
+adjacent word-pairs, in case Whisper splits it into two tokens) is scored
+against the wake word with difflib's similarity ratio; anything at or above
+WAKE_WORD_FUZZY_THRESHOLD counts. The threshold is deliberately conservative
+(0.6) — looser than that and ordinary words ("cutout", "python") start
+scoring similarly to genuine near-misses, causing false activations.
 """
 
 from __future__ import annotations
 
+import difflib
 import json
 import logging
 import os
+import re
 import threading
 import time
 import traceback
@@ -51,6 +62,25 @@ logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 log = logging.getLogger("ultron")
 
 LISTEN_CHUNK_SECONDS = float(os.getenv("LISTEN_CHUNK_SECONDS", "3.5"))
+WAKE_WORD_FUZZY_THRESHOLD = float(os.getenv("WAKE_WORD_FUZZY_THRESHOLD", "0.6"))
+
+
+def _find_wake_word_end(text: str, wake_word: str, threshold: float) -> int | None:
+    """Fuzzy-scan `text` for `wake_word`. Checks each word, and each pair of
+    adjacent words joined together (covers Whisper splitting the wake word
+    into two tokens). Returns the character index right after the match, or
+    None if nothing scored high enough."""
+    tokens = list(re.finditer(r"\S+", text))
+    for i, tok in enumerate(tokens):
+        word = tok.group().strip(".,!?;:\"'").lower()
+        if difflib.SequenceMatcher(None, word, wake_word).ratio() >= threshold:
+            return tok.end()
+        if i + 1 < len(tokens):
+            next_word = tokens[i + 1].group().strip(".,!?;:\"'").lower()
+            combo = word + next_word
+            if difflib.SequenceMatcher(None, combo, wake_word).ratio() >= threshold:
+                return tokens[i + 1].end()
+    return None
 
 
 class UltronApp:
@@ -160,12 +190,11 @@ class UltronApp:
 
         log.info("Heard (passive): %s", heard)
 
-        lower = heard.lower()
-        wake_index = lower.find(config.WAKE_WORD)
-        if wake_index == -1:
+        wake_end = _find_wake_word_end(heard, config.WAKE_WORD, WAKE_WORD_FUZZY_THRESHOLD)
+        if wake_end is None:
             return  # wake word not heard — stay passive, don't react to it
 
-        command = heard[wake_index + len(config.WAKE_WORD):].strip(" ,.!?")
+        command = heard[wake_end:].strip(" ,.!?")
         if len(command) < 3:
             # Just the wake word alone ("hey Ultron") — capture the actual
             # request as a separate immediate follow-up chunk.

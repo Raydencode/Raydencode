@@ -69,9 +69,13 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 # --- Optional / tunable settings --------------------------------------------
 
 # Whisper model size: tiny, base, small, medium, large. Bigger = more accurate
-# but slower and more memory-hungry. "base" is a reasonable default on a
-# laptop CPU.
-WHISPER_MODEL_SIZE = os.getenv("WHISPER_MODEL_SIZE", "base")
+# but slower and more memory-hungry. "small" trades a bit of latency for
+# meaningfully better accuracy on short/uncommon words (e.g. a wake word
+# like "Ultron") than "base" — worth it since misheard wake words are the
+# single most common failure mode. Drop to "base" if it's too slow on your
+# hardware, or "tiny" if you need it faster still and can live with more
+# misses.
+WHISPER_MODEL_SIZE = os.getenv("WHISPER_MODEL_SIZE", "small")
 
 # Path to a downloaded Piper voice model (.onnx file). See voice_output.py
 # and README instructions for how to obtain one. Left unset by default —
