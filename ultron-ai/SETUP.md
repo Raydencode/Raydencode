@@ -97,14 +97,34 @@ one of the OS-level deps from step 2a is missing — re-check that step.
 
 ---
 
-## 3. Get your API keys
+## 3. Choose your LLM backend, then get your API keys
+
+Ultron's "brain" is pluggable — pick ONE of these three for `LLM_PROVIDER`:
+
+| Provider | Cost | Card required? | Notes |
+|---|---|---|---|
+| `anthropic` | Paid (small per-token cost) | Yes, eventually (small starting credit grant on new accounts) | Best quality/reliability |
+| `gemini` | Free tier | **No** | Recommended free option — solid tool-use support |
+| `ollama` | Free forever | **No**, no account at all | Fully offline/local; needs a capable PC; tool-use less reliable than the cloud options |
+
+Regardless of which brain you pick, you still need three small free-tier
+keys for news/weather/search (all no-card signups):
 
 | Service | Used for | Where to get it | Free tier |
 |---|---|---|---|
-| Anthropic | The brain (Claude) | https://console.anthropic.com/ → **API Keys** → Create Key | New accounts get a small starting credit grant; pay-as-you-go after |
 | NewsAPI | `get_news` tool | https://newsapi.org/register | 100 requests/day, dev tier |
 | OpenWeatherMap | `get_weather` tool | https://home.openweathermap.org/users/sign_up → **API keys** tab | 1,000 calls/day. **New keys can take up to ~2 hours to activate** — if weather calls fail immediately after signup, this is why |
 | Tavily | `web_search` tool | https://tavily.com → sign up → dashboard shows your key | 1,000 searches/month |
+
+Then, depending on which brain you picked:
+
+- **`anthropic`**: https://console.anthropic.com/ → **API Keys** → Create Key
+- **`gemini`**: https://aistudio.google.com/apikey → Create API key (no card, just a Google account)
+- **`ollama`**: no key — instead, install the app:
+  1. Download and install from https://ollama.com
+  2. It runs a local server automatically after install (or run `ollama serve` yourself)
+  3. Pull a model that supports tool calling: `ollama pull llama3.1`
+     (this downloads ~4.7GB — needs a reasonably capable PC, 8GB+ RAM minimum)
 
 Copy each key somewhere safe as you create it — you'll paste them into
 `.env` next.
@@ -118,16 +138,28 @@ In the terminal:
 cp .env.example .env
 ```
 
-Open `.env` in VS Code and replace each placeholder:
+Open `.env` in VS Code and set `LLM_PROVIDER` to your choice, then fill in
+only the keys that provider needs, plus the three always-required ones:
+
 ```ini
-ANTHROPIC_API_KEY=sk-ant-...your real key...
+LLM_PROVIDER=gemini
+
+# only needed if LLM_PROVIDER=anthropic:
+# ANTHROPIC_API_KEY=sk-ant-...your real key...
+
+# only needed if LLM_PROVIDER=gemini:
+GEMINI_API_KEY=...your real key...
+
+# only needed if LLM_PROVIDER=ollama: nothing here, just OLLAMA_MODEL/OLLAMA_HOST
+# defaults (llama3.1 @ localhost:11434) work if you followed step 3 as-is
+
 NEWSAPI_KEY=...your real key...
 OPENWEATHERMAP_KEY=...your real key...
 TAVILY_API_KEY=tvly-...your real key...
 ```
 
-Leave everything below the four required keys commented out unless you want
-to change a default (voice model path, window size, wake key, etc.).
+Leave everything else commented out unless you want to change a default
+(voice model path, window size, wake key, etc.).
 
 **Do not commit `.env`** — it's already in `.gitignore`, but double check if
 you're pushing this to your own repo.
@@ -136,21 +168,25 @@ Sanity-check it loaded correctly:
 ```bash
 python config.py
 ```
-Expected output looks like:
+Expected output (example for `LLM_PROVIDER=gemini`):
 ```
 Ultron config loaded OK
-  ANTHROPIC_API_KEY = sk-a...xxxx
+  LLM_PROVIDER = gemini
   NEWSAPI_KEY = 1234...5678
   OPENWEATHERMAP_KEY = abcd...wxyz
   TAVILY_API_KEY = tvly...9999
+  GEMINI_API_KEY = AIza...xxxx
+  GEMINI_MODEL = gemini-2.0-flash
   WHISPER_MODEL_SIZE = base
-  ANTHROPIC_MODEL = claude-sonnet-4-6
   WAKE_KEY = space
 ```
 If instead you get `EnvironmentError: Missing required environment
-variable`, one of the four keys in `.env` is still blank or the file isn't
-named exactly `.env` (not `.env.txt` — watch out for Windows hiding
-extensions).
+variable`, one of the required keys for your chosen `LLM_PROVIDER` is still
+blank, or the file isn't named exactly `.env` (not `.env.txt` — watch out
+for Windows hiding extensions). If you picked `ollama`, also make sure the
+Ollama app is actually running before you launch Ultron — `config.py` won't
+catch that (there's no key to check), but `main.py` will error clearly if it
+can't reach it.
 
 ---
 

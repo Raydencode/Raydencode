@@ -1,8 +1,16 @@
 # Core
-anthropic>=0.40.0
 pywebview>=5.0
 python-dotenv>=1.0.0
 requests>=2.31.0
+
+# LLM backends — brain.py picks one at runtime via LLM_PROVIDER in .env.
+# All three are installed so you can switch providers without reinstalling;
+# only the one you actually select needs a working key/server.
+anthropic>=0.40.0          # LLM_PROVIDER=anthropic (paid, small per-token cost)
+google-generativeai>=0.8.0 # LLM_PROVIDER=gemini (free tier, no card required)
+# LLM_PROVIDER=ollama needs no pip package — it talks to a locally-running
+# Ollama server over HTTP via `requests` (already listed above). Install the
+# Ollama application itself separately from https://ollama.com
 
 # Voice input
 openai-whisper>=20231117

@@ -2,7 +2,9 @@
 
 A local desktop AI assistant: a cinematic animated HUD (pywebview), push-to-talk
 voice input (Whisper), local voice output (Piper), computer control, and live
-news/weather/search via Claude tool use.
+news/weather/search via LLM tool use. The brain is pluggable — Claude
+(Anthropic, paid), Gemini (Google, free tier), or a fully local model via
+Ollama (free forever, no account) — pick one with `LLM_PROVIDER` in `.env`.
 
 ## Project layout
 
@@ -86,11 +88,18 @@ console instead of speaking them.
 cp .env.example .env
 ```
 
-Then edit `.env` and fill in:
-- `ANTHROPIC_API_KEY` — from [console.anthropic.com](https://console.anthropic.com/) → API Keys
+First set `LLM_PROVIDER` to one of `anthropic` (paid, Claude), `gemini`
+(free tier, no card, get a key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey)),
+or `ollama` (free forever, fully local — install [Ollama](https://ollama.com),
+run `ollama pull llama3.1`, no API key needed).
+
+Then fill in the key matching your choice, plus these three (always
+required, all free-tier no-card signups):
 - `NEWSAPI_KEY` — free key from [newsapi.org/register](https://newsapi.org/register)
 - `OPENWEATHERMAP_KEY` — free key from [home.openweathermap.org](https://home.openweathermap.org/users/sign_up) (can take up to ~2 hours to activate)
 - `TAVILY_API_KEY` — free key from [tavily.com](https://tavily.com)
+
+See `SETUP.md` for the full per-provider breakdown.
 
 ## 4. Run it
 

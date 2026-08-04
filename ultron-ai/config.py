@@ -14,15 +14,28 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# --- LLM backend selection ---------------------------------------------------
+# Which brain to use. "anthropic" (Claude, paid), "gemini" (Google, free tier,
+# no card required), or "ollama" (fully local, free forever, no account at
+# all). See brain.py for the per-provider implementations.
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "anthropic").lower()
+_VALID_PROVIDERS = {"anthropic", "gemini", "ollama"}
+if LLM_PROVIDER not in _VALID_PROVIDERS:
+    raise EnvironmentError(
+        f"Invalid LLM_PROVIDER '{LLM_PROVIDER}' — must be one of {sorted(_VALID_PROVIDERS)}"
+    )
+
 # --- Required secrets -------------------------------------------------------
 # Keys that Ultron cannot function without. Missing any of these raises at
 # import time so the failure happens on startup, not mid-conversation.
-REQUIRED_ENV_VARS = [
-    "ANTHROPIC_API_KEY",
-    "NEWSAPI_KEY",
-    "OPENWEATHERMAP_KEY",
-    "TAVILY_API_KEY",
-]
+# News/weather/search keys are needed regardless of which LLM backend you
+# pick; the LLM key requirement depends on LLM_PROVIDER.
+REQUIRED_ENV_VARS = ["NEWSAPI_KEY", "OPENWEATHERMAP_KEY", "TAVILY_API_KEY"]
+if LLM_PROVIDER == "anthropic":
+    REQUIRED_ENV_VARS.append("ANTHROPIC_API_KEY")
+elif LLM_PROVIDER == "gemini":
+    REQUIRED_ENV_VARS.append("GEMINI_API_KEY")
+# ollama needs no API key — it talks to a local server instead.
 
 
 def _load_required(name: str) -> str:
@@ -41,12 +54,17 @@ if _missing:
         "Ultron cannot start — missing required environment variable(s): "
         + ", ".join(_missing)
         + "\nCopy .env.example to .env and fill in the missing values."
+        + ("\n(LLM_PROVIDER=" + LLM_PROVIDER + " — check that matches the key(s) you actually have.)")
     )
 
-ANTHROPIC_API_KEY = _load_required("ANTHROPIC_API_KEY")
 NEWSAPI_KEY = _load_required("NEWSAPI_KEY")
 OPENWEATHERMAP_KEY = _load_required("OPENWEATHERMAP_KEY")
 TAVILY_API_KEY = _load_required("TAVILY_API_KEY")
+
+# Present but possibly empty depending on LLM_PROVIDER — brain.py only
+# touches the one it actually needs.
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 # --- Optional / tunable settings --------------------------------------------
 
@@ -60,8 +78,17 @@ WHISPER_MODEL_SIZE = os.getenv("WHISPER_MODEL_SIZE", "base")
 # voice_output.py degrades gracefully (console-only) if this doesn't exist.
 PIPER_VOICE_MODEL_PATH = os.getenv("PIPER_VOICE_MODEL_PATH", "models/en_US-lessac-medium.onnx")
 
-# Anthropic model used by brain.py.
+# Model IDs per provider.
 ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+
+# Ollama: fully local LLM server. Install from https://ollama.com, run
+# `ollama serve` (or it auto-starts on install), then `ollama pull <model>`
+# once before first use. Tool-calling quality depends heavily on the model —
+# llama3.1 and qwen2.5 are known to support it reasonably well; many smaller
+# models don't support tool calling at all.
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.1")
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 
 # Dashboard window
 DASHBOARD_WINDOW_TITLE = "ULTRON"
@@ -84,8 +111,13 @@ if __name__ == "__main__":
         return v[:4] + "..." + v[-4:] if len(v) > 8 else "***"
 
     print("Ultron config loaded OK", file=sys.stderr)
+    print(f"  LLM_PROVIDER = {LLM_PROVIDER}", file=sys.stderr)
     for name in REQUIRED_ENV_VARS:
         print(f"  {name} = {_mask(os.getenv(name, ''))}")
+    if LLM_PROVIDER == "gemini":
+        print(f"  GEMINI_MODEL = {GEMINI_MODEL}")
+    if LLM_PROVIDER == "ollama":
+        print(f"  OLLAMA_MODEL = {OLLAMA_MODEL}")
+        print(f"  OLLAMA_HOST = {OLLAMA_HOST}")
     print(f"  WHISPER_MODEL_SIZE = {WHISPER_MODEL_SIZE}")
-    print(f"  ANTHROPIC_MODEL = {ANTHROPIC_MODEL}")
     print(f"  WAKE_KEY = {WAKE_KEY}")
