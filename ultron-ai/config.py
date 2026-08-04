@@ -86,9 +86,16 @@ GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 # `ollama serve` (or it auto-starts on install), then `ollama pull <model>`
 # once before first use. Tool-calling quality depends heavily on the model —
 # llama3.1 and qwen2.5 are known to support it reasonably well; many smaller
-# models don't support tool calling at all.
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.1")
+# models don't support tool calling at all. Defaulting to a smaller model
+# (llama3.2, ~3B) over llama3.1 (~8B) trades some accuracy for noticeably
+# faster responses on CPU-only hardware — bump back up to llama3.1 if you
+# have the hardware to spare and want the more capable model.
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2")
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+
+# Wake word: Ultron ignores everything it hears until a transcribed chunk
+# contains this word, then engages. Case-insensitive substring match.
+WAKE_WORD = os.getenv("WAKE_WORD", "ultron").lower()
 
 # Dashboard window
 DASHBOARD_WINDOW_TITLE = "ULTRON"

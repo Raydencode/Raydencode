@@ -20,6 +20,15 @@ either acts on it or discards it if nothing intelligible came through (which
 is the common case for a silent/quiet chunk — Whisper just returns an empty
 string). Long sentences can get cut off at a chunk boundary; pausing briefly
 between requests works better than talking continuously.
+
+Wake-word gating: Ultron only engages the LLM after it transcribes a chunk
+containing WAKE_WORD (default "ultron") — everything else is discarded
+silently. There's no dedicated low-power wake-word engine here (that'd mean
+a new always-on native dependency); instead every chunk is transcribed with
+Whisper and checked for the wake word, which is heavier than a purpose-built
+wake-word model but avoids adding one. If the wake word is heard with little
+or nothing useful after it (e.g. just "hey Ultron"), one extra chunk is
+recorded immediately to capture the actual request.
 """
 
 from __future__ import annotations
@@ -112,6 +121,31 @@ class UltronApp:
                 log.error("Unhandled error in main loop:\n%s", traceback.format_exc())
                 time.sleep(1)
 
+    def _record_and_transcribe(self, seconds: float) -> str | None:
+        """One record+transcribe pass. Returns stripped text, or None on
+        failure/empty/muted-mid-recording — callers just treat None as
+        'nothing usable, keep listening'."""
+        deadline = time.time() + seconds
+        try:
+            audio_path = voice_input.record_audio(lambda: time.time() < deadline and not self.muted)
+        except Exception as e:
+            log.error("Recording failed: %s", e)
+            time.sleep(1)
+            return None
+
+        try:
+            text = voice_input.transcribe(audio_path)
+        except Exception as e:
+            log.error("Transcription failed: %s", e)
+            return None
+        finally:
+            if audio_path and os.path.exists(audio_path):
+                os.remove(audio_path)
+
+        if self.muted or not text or not text.strip():
+            return None
+        return text.strip()
+
     def _one_cycle(self):
         if self.muted:
             self.set_status("muted")
@@ -119,26 +153,27 @@ class UltronApp:
             return
 
         self.set_status("listening")
-        deadline = time.time() + LISTEN_CHUNK_SECONDS
-        try:
-            audio_path = voice_input.record_audio(lambda: time.time() < deadline and not self.muted)
-        except Exception as e:
-            log.error("Recording failed: %s", e)
-            time.sleep(1)
-            return
+        heard = self._record_and_transcribe(LISTEN_CHUNK_SECONDS)
+        if heard is None:
+            return  # silence, noise, or muted mid-chunk — keep passively listening
 
-        try:
-            user_text = voice_input.transcribe(audio_path)
-        except Exception as e:
-            log.error("Transcription failed: %s", e)
-            return
-        finally:
-            if audio_path and os.path.exists(audio_path):
-                os.remove(audio_path)
+        lower = heard.lower()
+        wake_index = lower.find(config.WAKE_WORD)
+        if wake_index == -1:
+            return  # wake word not heard — stay passive, don't react to it
 
-        if self.muted or not user_text or not user_text.strip():
-            return  # silence, noise, or muted mid-chunk — just listen again
+        command = heard[wake_index + len(config.WAKE_WORD):].strip(" ,.!?")
+        if len(command) < 3:
+            # Just the wake word alone ("hey Ultron") — capture the actual
+            # request as a separate immediate follow-up chunk.
+            self.set_status("listening")
+            command = self._record_and_transcribe(LISTEN_CHUNK_SECONDS)
+            if not command:
+                return
 
+        self._handle_command(command)
+
+    def _handle_command(self, user_text: str):
         log.info("Heard: %s", user_text)
         self.show_transcript(f"You: {user_text}")
         self.set_status("thinking")
