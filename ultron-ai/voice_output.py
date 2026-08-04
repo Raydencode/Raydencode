@@ -67,6 +67,18 @@ except ImportError:
     )
 
 
+def _resample(audio: np.ndarray, orig_rate: int, target_rate: int) -> np.ndarray:
+    """Simple linear-interpolation resample — good enough for speech played
+    back over speakers, avoids pulling in a new dependency (e.g. scipy)."""
+    if orig_rate == target_rate or len(audio) == 0:
+        return audio
+    duration = len(audio) / orig_rate
+    target_len = max(1, int(duration * target_rate))
+    orig_x = np.linspace(0, len(audio) - 1, num=len(audio))
+    target_x = np.linspace(0, len(audio) - 1, num=target_len)
+    return np.interp(target_x, orig_x, audio.astype(np.float64)).astype(np.int16)
+
+
 def speak(text: str) -> None:
     """Speak `text` aloud via Piper, or print it if Piper isn't configured."""
     if not text:
@@ -84,10 +96,19 @@ def speak(text: str) -> None:
         buffer.seek(0)
         with wave.open(buffer, "rb") as wav_file:
             audio_bytes = wav_file.readframes(wav_file.getnframes())
-            sample_rate = wav_file.getframerate()
+            piper_rate = wav_file.getframerate()
             audio_np = np.frombuffer(audio_bytes, dtype=np.int16)
 
-        sd.play(audio_np, sample_rate)
+        # Play at the output device's own native rate, resampling Piper's
+        # audio to match, rather than forcing the device to open a stream
+        # at Piper's rate directly — some drivers (older Windows MME in
+        # particular) silently produce no/garbled audio instead of erroring
+        # when opened at a rate they don't natively support. This mirrors
+        # the same fix applied to microphone capture in voice_input.py.
+        device_rate = int(sd.query_devices(kind="output")["default_samplerate"])
+        playback_audio = _resample(audio_np, piper_rate, device_rate)
+
+        sd.play(playback_audio, device_rate)
         sd.wait()
 
     except Exception as e:
