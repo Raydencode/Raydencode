@@ -1,5 +1,12 @@
 # Core
-pywebview>=5.0
+# pywebview is PINNED (not >=) to 4.4.1: newer pywebview 5.x/6.x versions
+# expose window.native (the underlying WebView2 COM object) in a way that
+# triggers "maximum recursion depth exceeded" crashes on some Windows
+# machines when something probes the window's accessibility properties
+# (observed with pywebview 6.2.1 + WebView2). 4.4.1 predates that exposure
+# and doesn't hit this bug. Don't loosen this to >=4.4.1 without retesting
+# on Windows — pip will otherwise happily "upgrade" back into the crash.
+pywebview==4.4.1
 python-dotenv>=1.0.0
 requests>=2.31.0
 
