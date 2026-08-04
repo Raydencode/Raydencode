@@ -1,0 +1,33 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+build/
+dist/
+
+# Voice models (large binaries — download separately, see README)
+models/*.onnx
+models/*.onnx.json
+
+# Whisper cache
+.cache/whisper/
+
+# Temp audio
+*.wav
+tmp/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp

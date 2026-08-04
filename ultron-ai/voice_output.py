@@ -1,0 +1,83 @@
+"""
+Text-to-speech via Piper (https://github.com/rhasspy/piper), a fast local
+neural TTS engine.
+
+Piper needs a voice model that is NOT bundled with this repo (they're
+50-100MB+ each). To get one:
+
+    1. pip install piper-tts
+    2. Download a voice from https://huggingface.co/rhasspy/piper-voices
+       e.g. for a decent US English voice:
+       https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx
+       https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json
+       (you need BOTH the .onnx and the .onnx.json config file, same folder)
+    3. Save them to ./models/ (or wherever) and point PIPER_VOICE_MODEL_PATH
+       in .env at the .onnx file.
+
+If the model file isn't present, `speak()` prints the text to the console
+and logs a warning instead of crashing the app — voice output is a nice-to-
+have, not something a missing download should take the whole assistant down
+over.
+"""
+
+import io
+import os
+import sys
+import wave
+
+import sounddevice as sd
+import numpy as np
+
+from config import PIPER_VOICE_MODEL_PATH
+
+_voice = None
+_piper_available = False
+
+try:
+    from piper import PiperVoice
+
+    if os.path.isfile(PIPER_VOICE_MODEL_PATH):
+        _voice = PiperVoice.load(PIPER_VOICE_MODEL_PATH)
+        _piper_available = True
+        print(f"[voice_output] Piper voice loaded from {PIPER_VOICE_MODEL_PATH}", file=sys.stderr)
+    else:
+        print(
+            f"[voice_output] WARNING: Piper voice model not found at '{PIPER_VOICE_MODEL_PATH}'. "
+            "Speech output will fall back to console printing. See voice_output.py header for "
+            "download instructions.",
+            file=sys.stderr,
+        )
+except ImportError:
+    print(
+        "[voice_output] WARNING: 'piper-tts' package not installed. "
+        "Speech output will fall back to console printing. Run `pip install piper-tts` to enable it.",
+        file=sys.stderr,
+    )
+
+
+def speak(text: str) -> None:
+    """Speak `text` aloud via Piper, or print it if Piper isn't configured."""
+    if not text:
+        return
+
+    if not _piper_available:
+        print(f"[ULTRON says]: {text}")
+        return
+
+    try:
+        buffer = io.BytesIO()
+        with wave.open(buffer, "wb") as wav_file:
+            _voice.synthesize(text, wav_file)
+
+        buffer.seek(0)
+        with wave.open(buffer, "rb") as wav_file:
+            audio_bytes = wav_file.readframes(wav_file.getnframes())
+            sample_rate = wav_file.getframerate()
+            audio_np = np.frombuffer(audio_bytes, dtype=np.int16)
+
+        sd.play(audio_np, sample_rate)
+        sd.wait()
+
+    except Exception as e:
+        print(f"[voice_output] Speech synthesis failed ({e}); falling back to text.", file=sys.stderr)
+        print(f"[ULTRON says]: {text}")

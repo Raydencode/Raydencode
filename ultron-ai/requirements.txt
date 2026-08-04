@@ -1,0 +1,34 @@
+# Core
+anthropic>=0.40.0
+pywebview>=5.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+
+# Voice input
+openai-whisper>=20231117
+sounddevice>=0.4.6
+numpy>=1.26.0
+
+# Voice output
+# piper-tts ships a Python API + downloads its own ONNX runtime deps.
+# You must separately download a voice model (see voice_output.py / README).
+piper-tts>=1.2.0
+
+# Computer control
+pyautogui>=0.9.54
+psutil>=5.9.8
+
+# Push-to-talk
+# NOTE: on Linux, `keyboard` needs root (or a user added to the `input`
+# group with the right udev rules) because it reads raw /dev/input events.
+# main.py falls back to console (Enter-key) push-to-talk if this fails to
+# initialize.
+keyboard>=0.13.5
+
+# ----------------------------------------------------------------------------
+# OS-level dependencies (not installable via pip — see README):
+#   - ffmpeg          (required by openai-whisper for audio decoding)
+#   - portaudio       (required by sounddevice/PyAudio backends)
+#   - a WebView runtime for pywebview (WebKitGTK on Linux, WebView2 on
+#     Windows [usually preinstalled], Cocoa/WebKit on macOS [built in])
+# ----------------------------------------------------------------------------

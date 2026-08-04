@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ULTRON</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div id="stage">
+
+  <!-- Data cards, radially placed around the core -->
+  <div id="card-news" class="card card-news" hidden>
+    <div class="card-header">
+      <span class="card-title">NEWS</span>
+      <button class="card-close" data-card="news">&times;</button>
+    </div>
+    <div class="card-content"></div>
+  </div>
+
+  <div id="card-weather" class="card card-weather" hidden>
+    <div class="card-header">
+      <span class="card-title">WEATHER</span>
+      <button class="card-close" data-card="weather">&times;</button>
+    </div>
+    <div class="card-content"></div>
+  </div>
+
+  <div id="card-search" class="card card-search" hidden>
+    <div class="card-header">
+      <span class="card-title">SEARCH</span>
+      <button class="card-close" data-card="search">&times;</button>
+    </div>
+    <div class="card-content"></div>
+  </div>
+
+  <div id="card-system" class="card card-system" hidden>
+    <div class="card-header">
+      <span class="card-title">SYSTEM</span>
+      <button class="card-close" data-card="system">&times;</button>
+    </div>
+    <div class="card-content"></div>
+  </div>
+
+  <!-- Core -->
+  <div id="core">
+    <div class="ring ring-1"></div>
+    <div class="ring ring-2"></div>
+    <div class="ring ring-3"></div>
+    <div id="core-circle">
+      <span id="core-label">ULTRON</span>
+    </div>
+  </div>
+
+  <div id="status-indicator">
+    <span id="status-text">IDLE</span>
+  </div>
+
+  <div id="transcript-bar">
+    <span id="transcript-text"></span>
+  </div>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
