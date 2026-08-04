@@ -17,7 +17,6 @@ import whisper
 
 from config import WHISPER_MODEL_SIZE
 
-SAMPLE_RATE = 16_000  # Whisper's native rate
 CHANNELS = 1
 
 print(f"[voice_input] Loading Whisper model '{WHISPER_MODEL_SIZE}'...", file=sys.stderr)
@@ -28,12 +27,22 @@ print("[voice_input] Whisper model loaded.", file=sys.stderr)
 def record_audio(should_continue) -> str:
     """
     Record audio from the default microphone until `should_continue()` returns
-    False (e.g. the push-to-talk key has been released). Saves to a temp WAV
-    file and returns its path.
+    False (e.g. the listening window has elapsed). Saves to a temp WAV file
+    and returns its path.
+
+    Recorded at the device's own default sample rate rather than forcing
+    Whisper's native 16kHz — some drivers (older Windows MME devices in
+    particular) silently return empty/garbage audio when opened at a
+    non-native rate instead of raising an error. Whisper's own loader
+    resamples via ffmpeg from whatever rate the WAV file actually is, so
+    there's no need to resample here ourselves.
 
     `should_continue` is a zero-arg callable so the caller controls exactly
-    when recording stops (typically "is the wake key still held down").
+    when recording stops.
     """
+    device_info = sd.query_devices(kind="input")
+    sample_rate = int(device_info["default_samplerate"])
+
     audio_queue: queue.Queue = queue.Queue()
 
     def _callback(indata, frames, time_info, status):
@@ -42,7 +51,7 @@ def record_audio(should_continue) -> str:
         audio_queue.put(indata.copy())
 
     frames = []
-    with sd.InputStream(samplerate=SAMPLE_RATE, channels=CHANNELS, dtype="int16", callback=_callback):
+    with sd.InputStream(samplerate=sample_rate, channels=CHANNELS, dtype="int16", callback=_callback):
         while should_continue():
             try:
                 frames.append(audio_queue.get(timeout=0.1))
@@ -58,7 +67,7 @@ def record_audio(should_continue) -> str:
     with wave.open(tmp_file.name, "wb") as wf:
         wf.setnchannels(CHANNELS)
         wf.setsampwidth(2)  # int16 = 2 bytes
-        wf.setframerate(SAMPLE_RATE)
+        wf.setframerate(sample_rate)
         wf.writeframes(audio_data.tobytes())
 
     return tmp_file.name
