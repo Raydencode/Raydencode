@@ -33,16 +33,28 @@ from config import PIPER_VOICE_MODEL_PATH
 _voice = None
 _piper_available = False
 
+_PIPER_CONFIG_PATH = PIPER_VOICE_MODEL_PATH + ".json"
+
 try:
     from piper import PiperVoice
 
-    if os.path.isfile(PIPER_VOICE_MODEL_PATH):
-        _voice = PiperVoice.load(PIPER_VOICE_MODEL_PATH)
-        _piper_available = True
-        print(f"[voice_output] Piper voice loaded from {PIPER_VOICE_MODEL_PATH}", file=sys.stderr)
+    if os.path.isfile(PIPER_VOICE_MODEL_PATH) and os.path.isfile(_PIPER_CONFIG_PATH):
+        try:
+            _voice = PiperVoice.load(PIPER_VOICE_MODEL_PATH)
+            _piper_available = True
+            print(f"[voice_output] Piper voice loaded from {PIPER_VOICE_MODEL_PATH}", file=sys.stderr)
+        except Exception as e:
+            print(
+                f"[voice_output] WARNING: Failed to load Piper voice ({e}). "
+                "Speech output will fall back to console printing.",
+                file=sys.stderr,
+            )
     else:
+        missing = [
+            p for p in (PIPER_VOICE_MODEL_PATH, _PIPER_CONFIG_PATH) if not os.path.isfile(p)
+        ]
         print(
-            f"[voice_output] WARNING: Piper voice model not found at '{PIPER_VOICE_MODEL_PATH}'. "
+            f"[voice_output] WARNING: Piper voice file(s) not found: {', '.join(missing)}. "
             "Speech output will fall back to console printing. See voice_output.py header for "
             "download instructions.",
             file=sys.stderr,
