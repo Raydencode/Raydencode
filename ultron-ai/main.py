@@ -155,7 +155,10 @@ class UltronApp:
         self.set_status("listening")
         heard = self._record_and_transcribe(LISTEN_CHUNK_SECONDS)
         if heard is None:
+            log.info("(heard nothing intelligible this chunk)")
             return  # silence, noise, or muted mid-chunk — keep passively listening
+
+        log.info("Heard (passive): %s", heard)
 
         lower = heard.lower()
         wake_index = lower.find(config.WAKE_WORD)
