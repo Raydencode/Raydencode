@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ULTRON</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <canvas id="graph-canvas"></canvas>
+
+  <div id="topbar" class="panel">
+    <div class="brand"><span class="dot"></span> ULTRON</div>
+    <div id="badges" class="badges"></div>
+  </div>
+
+  <div id="degrade-banner"></div>
+
+  <div id="inspector" class="panel">
+    <h2>Focused note</h2>
+    <div id="inspector-empty">Click a node to open it. Shift-click a second node to trace the path between them.</div>
+    <div id="inspector-note" style="display:none"></div>
+
+    <h2 style="margin-top:6px">Top hubs</h2>
+    <ul id="hubs-list"></ul>
+  </div>
+
+  <div id="rightpanel" class="panel">
+    <div id="filters">
+      <h2>Filter</h2>
+      <div id="filters-list"></div>
+    </div>
+    <div id="reactor">
+      <canvas id="reactor-canvas" width="140" height="140"></canvas>
+      <div id="reactor-state" class="idle">idle</div>
+    </div>
+  </div>
+
+  <div id="card-panel" class="panel">
+    <span id="card-close" class="close">✕</span>
+    <h2 id="card-title">result</h2>
+    <pre id="card-body"></pre>
+  </div>
+
+  <div id="bottombar" class="panel">
+    <div id="caption-line"></div>
+    <form id="ask-form" autocomplete="off">
+      <div id="bars" aria-hidden="true">
+        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        <div class="bar"></div><div class="bar"></div>
+      </div>
+      <input id="ask-input" type="text" placeholder="Ask ULTRON…" />
+      <button type="button" id="mic-btn" class="icon-btn" title="Mic (Space)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      </button>
+      <button type="button" id="mute-btn" class="icon-btn" title="Mute ULTRON's voice">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+      </button>
+    </form>
+    <div id="tool-row">
+      <button type="button" id="brief-btn" class="chip-btn">Brief me</button>
+      <button type="button" id="plan-btn" class="chip-btn">Plan day</button>
+      <button type="button" id="memory-btn" class="chip-btn">Memory</button>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
