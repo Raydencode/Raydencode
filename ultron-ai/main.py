@@ -62,6 +62,7 @@ logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 log = logging.getLogger("ultron")
 
 LISTEN_CHUNK_SECONDS = float(os.getenv("LISTEN_CHUNK_SECONDS", "3.5"))
+FOLLOWUP_CHUNK_SECONDS = float(os.getenv("FOLLOWUP_CHUNK_SECONDS", "6"))
 WAKE_WORD_FUZZY_THRESHOLD = float(os.getenv("WAKE_WORD_FUZZY_THRESHOLD", "0.6"))
 
 
@@ -197,9 +198,11 @@ class UltronApp:
         command = heard[wake_end:].strip(" ,.!?")
         if len(command) < 3:
             # Just the wake word alone ("hey Ultron") — capture the actual
-            # request as a separate immediate follow-up chunk.
+            # request as a longer follow-up window than normal passive
+            # chunks, since we now know engagement is real and want more
+            # room for a pause-then-ask pattern instead of cutting it off.
             self.set_status("listening")
-            command = self._record_and_transcribe(LISTEN_CHUNK_SECONDS)
+            command = self._record_and_transcribe(FOLLOWUP_CHUNK_SECONDS)
             if not command:
                 return
 
